@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Closely Related Keys</title>
+<style>
+  :root {
+    --bg: #f7f7f5;
+    --card: #ffffff;
+    --text: #202124;
+    --muted: #666;
+    --border: #d6d6d2;
+    --accent: #2457a6;
+    --correct: #176b3a;
+    --incorrect: #a12622;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    min-height: 100vh;
+    background: var(--bg);
+    color: var(--text);
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    padding: 48px 20px;
+  }
+
+  main {
+    width: min(620px, 100%);
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    padding: 36px;
+    box-shadow: 0 8px 30px rgba(0,0,0,.06);
+  }
+
+  h1 {
+    margin: 0 0 8px;
+    font-size: 2rem;
+    line-height: 1.15;
+  }
+
+  .instructions {
+    margin: 0 0 30px;
+    color: var(--muted);
+    line-height: 1.5;
+  }
+
+  .prompt-label {
+    font-size: .9rem;
+    color: var(--muted);
+    margin-bottom: 5px;
+  }
+
+  #givenKey {
+    font-size: 2.4rem;
+    font-weight: 700;
+    margin-bottom: 28px;
+  }
+
+  #startPrompt {
+    margin: -10px 0 24px;
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: var(--accent);
+  }
+
+  .progress {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 24px;
+  }
+
+  .progress-dot {
+    height: 10px;
+    flex: 1;
+    border-radius: 999px;
+    background: #e3e3df;
+  }
+
+  .progress-dot.filled {
+    background: var(--accent);
+  }
+
+  form {
+    margin: 0;
+  }
+
+  #answer {
+    width: 100%;
+    font-size: 1.35rem;
+    padding: 14px 16px;
+    border: 2px solid var(--border);
+    border-radius: 10px;
+    outline: none;
+    color: #202124;
+    background: #ffffff;
+    caret-color: #202124;
+    -webkit-text-fill-color: #202124;
+    opacity: 1;
+  }
+
+  #answer:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(36,87,166,.12);
+  }
+
+  #feedback {
+    min-height: 34px;
+    margin-top: 14px;
+    font-weight: 700;
+    font-size: 1.05rem;
+  }
+
+  #feedback.correct { color: var(--correct); }
+  #feedback.incorrect { color: var(--incorrect); }
+
+  #answers {
+    margin-top: 22px;
+    color: var(--muted);
+    line-height: 1.5;
+  }
+
+  #answers span {
+    display: inline-block;
+    margin-right: 12px;
+  }
+
+  #complete {
+    display: none;
+    text-align: center;
+    padding: 18px 0 4px;
+  }
+
+  #complete h2 {
+    margin: 0 0 8px;
+    color: var(--correct);
+  }
+
+  button {
+    margin-top: 16px;
+    border: 0;
+    border-radius: 9px;
+    padding: 11px 18px;
+    background: var(--accent);
+    color: white;
+    font-size: 1rem;
+    cursor: pointer;
+  }
+
+  button:hover { filter: brightness(.95); }
+
+  .voiceover {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    margin: 0 0 24px;
+    font-size: .95rem;
+    cursor: pointer;
+    user-select: none;
+  }
+
+  .voiceover input {
+    width: 18px;
+    height: 18px;
+    margin: 0;
+    accent-color: var(--accent);
+    cursor: pointer;
+  }
+
+  .hint {
+    margin-top: 26px;
+    font-size: .9rem;
+    color: var(--muted);
+  }
+</style>
+</head>
+<body>
+<main>
+  <h1>Closely Related Keys</h1>
+  <p class="instructions">
+    Name all five closely related keys. Type one key at a time and press
+    <strong>Enter</strong>. The keys may be entered in any order.
+  </p>
+
+  <label class="voiceover">
+    <input type="checkbox" id="voiceover" checked>
+    <span>Voiceover</span>
+  </label>
+
+  <div class="prompt-label">Given key</div>
+  <div id="givenKey" aria-live="polite"></div>
+  <div id="startPrompt">Press Enter to start</div>
+
+  <div class="progress" aria-label="Progress">
+    <div class="progress-dot" id="dot0"></div>
+    <div class="progress-dot" id="dot1"></div>
+    <div class="progress-dot" id="dot2"></div>
+    <div class="progress-dot" id="dot3"></div>
+    <div class="progress-dot" id="dot4"></div>
+  </div>
+
+  <form id="answerForm" autocomplete="off">
+    <label for="answer" class="prompt-label">Your answer</label>
+    <input
+      id="answer"
+      name="answer"
+      type="text"
+      spellcheck="false"
+      autocapitalize="off"
+      autocomplete="off"
+      aria-describedby="feedback"
+      autofocus
+    >
+  </form>
+
+  <div id="feedback" aria-live="polite"></div>
+  <div id="answers" aria-live="polite"></div>
+
+  <div id="complete">
+    <h2>Excellent!</h2>
+    <div>You named all five closely related keys.</div>
+    <button type="button" id="newQuestion">New key</button>
+  </div>
+
+  <div class="hint">
+    Examples: <em>D minor</em>, <em>F-sharp minor</em>, <em>F# minor</em>, <em>Bb major</em>.
+  </div>
+</main>
+
+<script>
+/*
+  For a major key:
+    ii, iii, IV, V, vi
+
+  For a minor key:
+    III, iv, v, VI, VII
+
+  The question pool is restricted to the 18 keys requested:
+    C, Am, G, Em, D, Bm, A, F#m, E, C#m,
+    F, Dm, Bb, Gm, Eb, Cm, Ab, Fm
+*/
+
+const questions = [
+  { key: "C major", related: [
+      "D minor", "E minor", "F major", "G major", "A minor"
+  ]},
+  { key: "A minor", related: [
+      "C major", "D minor", "E minor", "F major", "G major"
+  ]},
+  { key: "G major", related: [
+      "A minor", "B minor", "C major", "D major", "E minor"
+  ]},
+  { key: "E minor", related: [
+      "G major", "A minor", "B minor", "C major", "D major"
+  ]},
+  { key: "D major", related: [
+      "E minor", "F-sharp minor", "G major", "A major", "B minor"
+  ]},
+  { key: "B minor", related: [
+      "D major", "E minor", "F-sharp minor", "G major", "A major"
+  ]},
+  { key: "A major", related: [
+      "B minor", "C-sharp minor", "D major", "E major", "F-sharp minor"
+  ]},
+  { key: "F-sharp minor", related: [
+      "A major", "B minor", "C-sharp minor", "D major", "E major"
+  ]},
+  { key: "E major", related: [
+      "F-sharp minor", "G-sharp minor", "A major", "B major", "C-sharp minor"
+  ]},
+  { key: "C-sharp minor", related: [
+      "E major", "F-sharp minor", "G-sharp minor", "A major", "B major"
+  ]},
+  { key: "F major", related: [
+      "G minor", "A minor", "B-flat major", "C major", "D minor"
+  ]},
+  { key: "D minor", related: [
+      "F major", "G minor", "A minor", "B-flat major", "C major"
+  ]},
+  { key: "B-flat major", related: [
+      "C minor", "D minor", "E-flat major", "F major", "G minor"
+  ]},
+  { key: "G minor", related: [
+      "B-flat major", "C minor", "D minor", "E-flat major", "F major"
+  ]},
+  { key: "E-flat major", related: [
+      "F minor", "G minor", "A-flat major", "B-flat major", "C minor"
+  ]},
+  { key: "C minor", related: [
+      "E-flat major", "F minor", "G minor", "A-flat major", "B-flat major"
+  ]},
+  { key: "A-flat major", related: [
+      "B-flat minor", "C minor", "D-flat major", "E-flat major", "F minor"
+  ]},
+  { key: "F minor", related: [
+      "A-flat major", "B-flat minor", "C minor", "D-flat major", "E-flat major"
+  ]}
+];
+
+// Normalize common ways students may type key names.
+function normalizeKey(input) {
+  // Convert every common accidental spelling to a single word-based form.
+  // This deliberately avoids relying on "#" as part of the internal key names.
+  let s = input
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, " ")
+    .replace(/\u266f/g, " sharp")   // ♯
+    .replace(/\u0023/g, " sharp")   // #
+    .replace(/\u266d/g, " flat")    // ♭
+    .replace(/-sharp/g, " sharp")
+    .replace(/sharp/g, " sharp")
+    .replace(/-flat/g, " flat")
+    .replace(/flat/g, " flat")
+    .replace(/\s+/g, " ")
+    .replace(/\bmaj\b/g, "major")
+    .replace(/\bmin\b/g, "minor");
+
+  // Accept common shorthand such as "dm", "f#m", "f♯m", "bb major".
+  let shorthand = s.match(/^([a-g])\s*(sharp|flat)?\s*m$/);
+  if (shorthand) {
+    s = shorthand[1] + (shorthand[2] ? " " + shorthand[2] : "") + " minor";
+  }
+
+  // Accept flat notation such as "Bb major" and "Ab minor".
+  shorthand = s.match(/^([a-g])b\s+(major|minor)$/);
+  if (shorthand) {
+    s = shorthand[1] + " flat " + shorthand[2];
+  }
+
+  return s;
+}
+
+function displayKey(key) {
+  return key
+    .replace(/-sharp/g, "♯")
+    .replace(/-flat/g, "♭");
+}
+
+const form = document.getElementById("answerForm");
+const answer = document.getElementById("answer");
+const givenKey = document.getElementById("givenKey");
+const feedback = document.getElementById("feedback");
+const answers = document.getElementById("answers");
+const complete = document.getElementById("complete");
+const newQuestion = document.getElementById("newQuestion");
+
+let currentQuestion;
+let acceptedAnswers = [];
+let quizStarted = false;
+
+const voiceover = document.getElementById("voiceover");
+
+function speak(text) {
+  if (!voiceover.checked || !("speechSynthesis" in window)) return;
+
+  window.speechSynthesis.cancel();
+
+  const utterance = new SpeechSynthesisUtterance(text);
+  utterance.rate = 0.95;
+  utterance.pitch = 1;
+  utterance.volume = 1;
+
+  window.speechSynthesis.speak(utterance);
+}
+
+function voiceInstructions() {
+  speak(
+    "Name all five closely related keys. " +
+    "Type one key at a time and press Enter. " +
+    "The keys may be entered in any order."
+  );
+}
+
+function chooseQuestion() {
+  currentQuestion = questions[Math.floor(Math.random() * questions.length)];
+  acceptedAnswers = [];
+
+  givenKey.textContent = displayKey(currentQuestion.key);
+  feedback.textContent = "";
+
+  if (quizStarted) {
+    speak("Given key: " + currentQuestion.key);
+  }
+  feedback.className = "";
+  answers.innerHTML = "";
+  complete.style.display = "none";
+  answer.style.display = "block";
+  answer.value = "";
+  answer.disabled = false;
+
+  if (quizStarted) {
+    answer.focus();
+  }
+
+  updateProgress();
+}
+
+function updateProgress() {
+  for (let i = 0; i < 5; i++) {
+    document.getElementById("dot" + i)
+      .classList.toggle("filled", i < acceptedAnswers.length);
+  }
+}
+
+function showAcceptedAnswers() {
+  if (!acceptedAnswers.length) {
+    answers.innerHTML = "";
+    return;
+  }
+
+  answers.innerHTML =
+    "<strong>Named:</strong> " +
+    acceptedAnswers.map(key => `<span>${displayKey(key)}</span>`).join("");
+}
+
+answer.addEventListener("keydown", (event) => {
+  if (event.key !== "Enter") return;
+  event.preventDefault();
+
+  // The first Enter starts the quiz and gives the browser a user gesture
+  // that allows speech synthesis to begin.
+  if (!quizStarted) {
+    quizStarted = true;
+    document.getElementById("startPrompt").style.display = "none";
+    answer.focus();
+
+    if (voiceover.checked) {
+      speak(
+        "Name all five closely related keys. " +
+        "Given key: " + currentQuestion.key + "."
+      );
+    }
+    return;
+  }
+
+  const raw = answer.value;
+  const normalized = normalizeKey(raw);
+
+  if (!normalized) return;
+
+  const match = currentQuestion.related.find(
+    key => normalizeKey(key) === normalized
+  );
+
+  if (!match) {
+    feedback.textContent = "Not one of the five closely related keys.";
+    feedback.className = "incorrect";
+    speak("Incorrect. That is not one of the five closely related keys.");
+    answer.select();
+    answer.focus();
+    return;
+  }
+
+  if (acceptedAnswers.some(key => normalizeKey(key) === normalized)) {
+    feedback.textContent = "You already named that key.";
+    feedback.className = "incorrect";
+    speak("You already named that key.");
+    answer.select();
+    answer.focus();
+    return;
+  }
+
+  acceptedAnswers.push(match);
+  feedback.textContent = "Correct!";
+  feedback.className = "correct";
+  answer.value = "";
+
+  speak("Correct.");
+
+  // Briefly highlight the successful submission so Enter always has
+  // an immediate visual response.
+  answer.style.borderColor = "var(--correct)";
+  setTimeout(() => {
+    answer.style.borderColor = "";
+  }, 350);
+
+  updateProgress();
+  showAcceptedAnswers();
+
+  if (acceptedAnswers.length === 5) {
+    answer.style.display = "none";
+    complete.style.display = "block";
+    answer.blur();
+    speak("Excellent! You named all five closely related keys.");
+  } else {
+    answer.focus();
+  }
+});
+
+newQuestion.addEventListener("click", () => {
+  quizStarted = true;
+  chooseQuestion();
+  speak("Given key: " + currentQuestion.key);
+});
+
+voiceover.addEventListener("change", () => {
+  if (voiceover.checked) {
+    voiceInstructions();
+    setTimeout(() => {
+      speak("Given key: " + currentQuestion.key);
+    }, 1800);
+  } else if ("speechSynthesis" in window) {
+    window.speechSynthesis.cancel();
+  }
+});
+
+chooseQuestion();
+</script>
+</body>
+</html>
